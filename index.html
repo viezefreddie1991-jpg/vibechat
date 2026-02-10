@@ -147,8 +147,10 @@
     const overlay = document.getElementById('overlay');
     const nameInput = document.getElementById('name-input');
     const joinBtn = document.getElementById('join-btn');
-
     let currentRoom = 'general';
+
+
+
 
     function switchRoom(newRoom) {
         if (newRoom === currentRoom) return;
@@ -173,19 +175,33 @@
     });
 
 
+    // Function to handle the join logic consistently
+    function joinChat(name) {
+        socket.emit('set-identity', name);
+        // Manually trigger the room join for the default room
+        socket.emit('switch-room', { oldRoom: null, newRoom: 'general' });
+    }
+
+    // Check for returning user
+    const savedName = localStorage.getItem('vibe-name');
+    if (savedName) {
+        joinChat(savedName);
+    }
+
+    // 2. If they just typed it in the modal
     joinBtn.addEventListener('click', () => {
         const inputName = nameInput.value.trim();
         if (inputName) {
             localStorage.setItem('vibe-name', inputName);
-            overlay.style.display = 'none'; // Close the popup
-            socket.emit('set-identity', inputName);
+            overlay.style.display = 'none';
+            joinChat(inputName);
         }
     });
 
-    // Always emit the identity if it exists on load
+   /* // Always emit the identity if it exists on load
     if (localStorage.getItem('vibe-name')) {
         socket.emit('set-identity', localStorage.getItem('vibe-name'));
-    }
+    }*/
 
     // Function to add a message to the UI
     function addMessageToUI(data) {

@@ -29,7 +29,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('switch-room', ({ oldRoom, newRoom }) => {
-        socket.leave(oldRoom);
+        if (oldRoom) {
+            socket.leave(oldRoom);
+        }
         socket.join(newRoom);
         socket.currentRoom = newRoom;
         console.log(`${socket.userName} moved to ${newRoom}`);
