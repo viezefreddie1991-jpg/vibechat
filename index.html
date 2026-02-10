@@ -17,7 +17,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            visibility:hidden;
+
         }
 
         /* Sidebar Styling */
@@ -183,7 +183,7 @@
 
     // Function to handle the join logic consistently
     function joinChat(name) {
-        document.getElementById('app-container').style.visibility = 'visible';
+
         socket.emit('set-identity', name);
         // Manually trigger the room join for the default room
         socket.emit('switch-room', { oldRoom: null, newRoom: 'general' });
