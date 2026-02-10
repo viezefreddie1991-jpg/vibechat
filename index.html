@@ -9,6 +9,34 @@
         #form { display: flex; padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
         input { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #2a2a2a; color: white; outline: none; }
         button { padding: 10px 20px; background: #6200ee; color: white; border: none; border-radius: 4px; margin-left: 10px; cursor: pointer; }
+
+
+        /* Container for Sidebar + Chat */
+        #app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            visibility:hidden;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: 200px;
+            background: #181818;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        /* Main Chat Area */
+        #chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
     </style>
 
     <script>
@@ -97,23 +125,7 @@
     }
 
 
-    /* Container for Sidebar + Chat */
-    #app-container {
-        display: flex;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-    }
 
-    /* Sidebar Styling */
-    #sidebar {
-        width: 200px;
-        background: #181818;
-        border-right: 1px solid #333;
-        display: flex;
-        flex-direction: column;
-        padding: 15px;
-    }
 
     #sidebar h3 { font-size: 0.9rem; color: #888; margin-bottom: 20px; text-transform: uppercase; }
 
@@ -126,13 +138,7 @@
     .channel-btn:hover { background: #252525; color: white; }
     .channel-btn.active { background: #333; color: #00d4ff; font-weight: bold; }
 
-    /* Main Chat Area */
-    #chat-main {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-    }
+
 
 </style>
 
@@ -177,6 +183,7 @@
 
     // Function to handle the join logic consistently
     function joinChat(name) {
+        document.getElementById('app-container').style.visibility = 'visible';
         socket.emit('set-identity', name);
         // Manually trigger the room join for the default room
         socket.emit('switch-room', { oldRoom: null, newRoom: 'general' });

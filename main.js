@@ -13,6 +13,11 @@ function createWindow() {
 
     // Load your LIVE hosted URL instead of localhost
     win.loadURL('https://vibechat-mgc3.onrender.com');
+
+// Only show the window when the page is fully rendered
+    win.once('ready-to-show', () => {
+        win.show();
+    });
 }
 
 app.whenReady().then(createWindow);
