@@ -10,9 +10,22 @@
         input { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #2a2a2a; color: white; outline: none; }
         button { padding: 10px 20px; background: #6200ee; color: white; border: none; border-radius: 4px; margin-left: 10px; cursor: pointer; }
     </style>
+
+    <script>
+        // This runs instantly before the body is even drawn
+        const savedName = localStorage.getItem('vibe-name');
+
+        // We use a listener to wait just until the element exists
+        document.addEventListener("DOMContentLoaded", () => {
+            const overlay = document.getElementById('overlay');
+            if (!savedName) {
+                overlay.style.display = 'flex'; // Only show if name is missing
+            }
+        });
+    </script>
 </head>
 <body>
-<div id="overlay">
+<div id="overlay" style="display:none;">
     <div class="modal">
         <h2>What's your vibe name?</h2>
         <input id="name-input" placeholder="Enter nickname..." />
@@ -76,26 +89,23 @@
     const overlay = document.getElementById('overlay');
     const nameInput = document.getElementById('name-input');
     const joinBtn = document.getElementById('join-btn');
-    let myName = localStorage.getItem('vibe-name');
 
-    // 1. Instant Vibe Check
-    if (!myName) {
-        // Only show the overlay if we DON'T have a name
-        overlay.classList.add('visible');
-    } else {
-        // Connect immediately if we have a name
-        socket.emit('set-identity', myName);
-    }
+
+
 
     joinBtn.addEventListener('click', () => {
-        if (nameInput.value.trim()) {
-            myName = nameInput.value.trim();
-            localStorage.setItem('vibe-name', myName); // Save for later
-            overlay.classList.remove('visible'); // Fade out
-            setTimeout(() => overlay.classList.add('hidden'), 300); // Fully hide after fade
-            socket.emit('set-identity', myName); // Tell the server
+        const inputName = nameInput.value.trim();
+        if (inputName) {
+            localStorage.setItem('vibe-name', inputName);
+            overlay.style.display = 'none'; // Close the popup
+            socket.emit('set-identity', inputName);
         }
     });
+
+    // Always emit the identity if it exists on load
+    if (localStorage.getItem('vibe-name')) {
+        socket.emit('set-identity', localStorage.getItem('vibe-name'));
+    }
 
     // Function to add a message to the UI
     function addMessageToUI(data) {
