@@ -49,11 +49,20 @@
 
     #overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #121212; display: flex; align-items: center; justify-content: center;
+        background: #121212;
+        display: none; /* Change from 'flex' to 'none' */
+        align-items: center; justify-content: center;
         z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s ease; /* Adds a nice fade vibe */
     }
     .modal { background: #1e1e1e; padding: 30px; border-radius: 12px; text-align: center; }
-    .hidden { display: none !important; }
+
+
+    #overlay.visible {
+        display: flex;
+        opacity: 1;
+    }
 </style>
 
 <script>
@@ -69,9 +78,12 @@
     const joinBtn = document.getElementById('join-btn');
     let myName = localStorage.getItem('vibe-name');
 
-    // 1. Check if we already know them
-    if (myName) {
-        overlay.classList.add('hidden');
+    // 1. Instant Vibe Check
+    if (!myName) {
+        // Only show the overlay if we DON'T have a name
+        overlay.classList.add('visible');
+    } else {
+        // Connect immediately if we have a name
         socket.emit('set-identity', myName);
     }
 
@@ -79,7 +91,8 @@
         if (nameInput.value.trim()) {
             myName = nameInput.value.trim();
             localStorage.setItem('vibe-name', myName); // Save for later
-            overlay.classList.add('hidden');
+            overlay.classList.remove('visible'); // Fade out
+            setTimeout(() => overlay.classList.add('hidden'), 300); // Fully hide after fade
             socket.emit('set-identity', myName); // Tell the server
         }
     });
