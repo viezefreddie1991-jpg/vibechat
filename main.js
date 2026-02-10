@@ -9,6 +9,7 @@ function createWindow() {
             contextIsolation: false
         }
     });
+    win.setMenuBarVisibility(false)
 
     // Load your LIVE hosted URL instead of localhost
     win.loadURL('https://vibechat-mgc3.onrender.com');

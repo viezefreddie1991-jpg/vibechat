@@ -32,12 +32,31 @@
         <button id="join-btn">Join Chat</button>
     </div>
 </div>
-<ul id="messages"></ul>
-<div id="typing-indicator" style="padding: 5px 20px; font-size: 0.8rem; color: #888; height: 20px;"></div>
-<form id="form">
-    <input id="input" autocomplete="off" placeholder="Type a message..." />
-    <button>Send</button>
-</form>
+
+
+
+
+
+<div id="app-container">
+    <aside id="sidebar">
+        <h3>Channels</h3>
+        <button class="channel-btn active" onclick="switchRoom('general')"># general</button>
+        <button class="channel-btn" onclick="switchRoom('gaming')"># gaming</button>
+        <button class="channel-btn" onclick="switchRoom('code-talk')"># code-talk</button>
+    </aside>
+
+    <main id="chat-main">
+        <ul id="messages"></ul>
+        <div id="typing-indicator" style="padding: 5px 20px; font-size: 0.8rem; color: #888; height: 20px;"></div>
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="Type a message..." />
+            <button>Send</button>
+        </form>
+    </main>
+</div>
+
+
+
 
 <script src="/socket.io/socket.io.js"></script>
 <style>
@@ -76,6 +95,45 @@
         display: flex;
         opacity: 1;
     }
+
+
+    /* Container for Sidebar + Chat */
+    #app-container {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+    }
+
+    /* Sidebar Styling */
+    #sidebar {
+        width: 200px;
+        background: #181818;
+        border-right: 1px solid #333;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    #sidebar h3 { font-size: 0.9rem; color: #888; margin-bottom: 20px; text-transform: uppercase; }
+
+    .channel-btn {
+        background: transparent; border: none; color: #ccc;
+        text-align: left; padding: 10px; cursor: pointer;
+        border-radius: 5px; margin-bottom: 5px; transition: 0.2s;
+    }
+
+    .channel-btn:hover { background: #252525; color: white; }
+    .channel-btn.active { background: #333; color: #00d4ff; font-weight: bold; }
+
+    /* Main Chat Area */
+    #chat-main {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
 </style>
 
 <script>
@@ -90,7 +148,29 @@
     const nameInput = document.getElementById('name-input');
     const joinBtn = document.getElementById('join-btn');
 
+    let currentRoom = 'general';
 
+    function switchRoom(newRoom) {
+        if (newRoom === currentRoom) return;
+
+        // Visual active state for buttons
+        document.querySelectorAll('.channel-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(newRoom));
+        });
+
+        // 1. Clear the UI immediately so it feels snappy
+        messages.innerHTML = '';
+
+        // 2. Tell the server to move us and send new history
+        socket.emit('switch-room', { oldRoom: currentRoom, newRoom: newRoom });
+        currentRoom = newRoom;
+    }
+
+    // This remains the same as before, but now it fires every time you switch
+    socket.on('load history', (history) => {
+        messages.innerHTML = ''; // Double-check it's clear
+        history.forEach(data => addMessageToUI(data));
+    });
 
 
     joinBtn.addEventListener('click', () => {
@@ -130,12 +210,12 @@
         }, 2000);
     });
 
-    // Handle the history dump
+    /*// Handle the history dump
     socket.on('load history', (history) => {
         // Clear current view (optional) and load all old messages
         messages.innerHTML = '';
         history.forEach(data => addMessageToUI(data));
-    });
+    });*/
 
     // 2. Listen for others typing
     socket.on('user typing', (data) => {

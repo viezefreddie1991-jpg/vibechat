@@ -8,17 +8,37 @@ const io = new Server(server);
 
 app.use(express.static(__dirname)); // Serves your index.html
 
-let msgHistory = []; // The memory bank
+let roomHistory = {
+    'general': [],
+    'gaming': [],
+    'code-talk': []
+};
 
 io.on('connection', (socket) => {
     const vibeColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
     // const userId = socket.id.substring(0, 5);
     socket.userName = "Anonymous";
-    socket.emit('load history', msgHistory);
+    socket.join('general');
+    socket.currentRoom = 'general';
+
+    //socket.emit('load history', msgHistory);
 
     socket.on('set-identity', (name) => {
         socket.userName = name;
         console.log(`${socket.userName} joined the vibe.`);
+    });
+
+    socket.on('switch-room', ({ oldRoom, newRoom }) => {
+        socket.leave(oldRoom);
+        socket.join(newRoom);
+        socket.currentRoom = newRoom;
+        console.log(`${socket.userName} moved to ${newRoom}`);
+
+        if (!roomHistory[newRoom]) {
+            roomHistory[newRoom] = [];
+        }
+        // If you want history per room, you'd load it here
+        socket.emit('load history', roomHistory[newRoom]);
     });
 
     socket.on('chat message', (msg) => {
@@ -28,15 +48,16 @@ io.on('connection', (socket) => {
             userName: socket.userName // Send the real name!
         };
 
-        // 2. Save the message to history
-        msgHistory.push(data);
+        // Save to the specific room's history
+        const room = socket.currentRoom;
+        roomHistory[room].push(data);
 
-        // Keep only the last 50 messages
-        if (msgHistory.length > 50) {
-            msgHistory.shift();
+        // Keep each room's history at a reasonable limit
+        if (roomHistory[room].length > 50) {
+            roomHistory[room].shift();
         }
 
-        io.emit('chat message', data);
+        io.to(room).emit('chat message', data);
     });
 
     socket.on('typing', () => {
