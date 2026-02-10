@@ -49,6 +49,19 @@
     const typingIndicator = document.getElementById('typing-indicator');
     let typingTimeout;
 
+
+    // Function to add a message to the UI
+    function addMessageToUI(data) {
+        const item = document.createElement('li');
+        item.classList.add('message-item');
+        item.innerHTML = `
+      <span class="vibe-id" style="color: ${data.color}">User_${data.id}</span>
+      <span class="text">${data.text}</span>
+    `;
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
     // 1. Tell the server we are typing
     input.addEventListener('keypress', () => {
         socket.emit('typing');
@@ -58,6 +71,13 @@
         typingTimeout = setTimeout(() => {
             socket.emit('stop typing');
         }, 2000);
+    });
+
+    // Handle the history dump
+    socket.on('load history', (history) => {
+        // Clear current view (optional) and load all old messages
+        messages.innerHTML = '';
+        history.forEach(data => addMessageToUI(data));
     });
 
     // 2. Listen for others typing
@@ -78,18 +98,10 @@
     });
 
     // Now handling the 'data' object { text, color, id }
+    // Handle new incoming messages
     socket.on('chat message', (data) => {
-        const item = document.createElement('li');
-        item.classList.add('message-item');
         typingIndicator.textContent = '';
-        // Create the ID label with the user's random color
-        item.innerHTML = `
-      <span class="vibe-id" style="color: ${data.color}">User_${data.id}</span>
-      <span class="text">${data.text}</span>
-    `;
-
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
+        addMessageToUI(data);
     });
 </script>
 </body>
