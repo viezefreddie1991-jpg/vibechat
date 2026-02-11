@@ -4,7 +4,7 @@
     <title>Discord 2.0</title>
     <link rel="stylesheet" href="style.css">
     <script>
-        // This runs instantly before the body is even drawn
+       /* // This runs instantly before the body is even drawn
         const savedName = localStorage.getItem('vibe-name');
 
         // We use a listener to wait just until the element exists
@@ -13,7 +13,7 @@
             if (!savedName) {
                 overlay.style.display = 'flex'; // Only show if name is missing
             }
-        });
+        });*/
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -23,17 +23,20 @@
 
 
 <div id="overlay">
-  <div class="modal">
-    <h2 id="auth-title">Welcome Back</h2>
-    <input id="email-input" type="email" placeholder="Email" />
-    <input id="pass-input" type="password" placeholder="Password" />
+    <div class="modal">
+        <h2 id="auth-title">Welcome Back</h2>
 
-    <p id="error-msg" style="min-height: 1.2rem; font-size: 0.8rem; margin-bottom: 10px;"></p>
-    <button id="auth-btn">Login</button>
-    <p id="toggle-text">Need an account? <span id="switch-mode" style="color:#00d4ff; cursor:pointer">Sign Up</span></p>
-  </div>
+        <input id="display-name-input" type="text" placeholder="Display Name" style="display: none;" />
+        <input id="email-input" type="email" placeholder="Email"/>
+        <input id="pass-input" type="password" placeholder="Password"/>
+
+        <p id="error-msg" style="min-height: 1.2rem; font-size: 0.8rem; margin-bottom: 10px;"></p>
+        <button id="auth-btn">Login</button>
+        <p id="toggle-text">Need an account? <span id="switch-mode" style="color:#00d4ff; cursor:pointer">Sign Up</span>
+        </p>
+    </div>
 </div>
-    
+
 
 <div id="app-container">
     <aside id="sidebar">
@@ -47,17 +50,18 @@
         <ul id="messages"></ul>
         <div id="typing-indicator" style="padding: 5px 20px; font-size: 0.8rem; color: #888; height: 20px;"></div>
         <form id="form">
-            <input id="input" autocomplete="off" placeholder="Type a message..." />
+            <input id="input" autocomplete="off" placeholder="Type a message..."/>
             <button>Send</button>
         </form>
     </main>
 </div>
 
 
-
-
-
 <script>
+
+
+
+
     const socket = io();
     const form = document.getElementById('form');
     const input = document.getElementById('input');
@@ -73,81 +77,123 @@
     const authBtn = document.getElementById('auth-btn'); // Renamed from join-btn
     let currentRoom = 'general';
 
-      // Rename the variable to 'db' or 'supabaseClient'
+    // Rename the variable to 'db' or 'supabaseClient'
     const supabaseUrl = 'https://knldcjijbpvxhcwenzle.supabase.co';
     const supabaseKey = 'sb_publishable_CU5pG98gM8IhgmVFeJRmAQ_uq4P1Xv9';
 
-    
+
     // Use a different name than the library itself
-    const db = supabase.createClient(supabaseUrl, supabaseKey); 
-    
+    const db = supabase.createClient(supabaseUrl, supabaseKey);
+
     // Now use 'db' whenever you need to login or signup
     async function handleAuth() {
-      const { data, error } = await db.auth.signInWithPassword({ 
-        email: emailInput.value, 
-        password: passInput.value 
-      });
+        const {data, error} = await db.auth.signInWithPassword({
+            email: emailInput.value,
+            password: passInput.value
+        });
     }
+
+    // AT THE TOP OF YOUR SCRIPT
+    async function checkUser() {
+        const { data: { user } } = await db.auth.getUser();
+
+        if (user) {
+            // We get the name from Supabase, NOT localStorage
+            const name = user.user_metadata.display_name || user.email.split('@')[0];
+            overlay.style.display = 'none';
+            joinChat(name);
+        } else {
+            // Show the login modal
+            overlay.style.display = 'flex';
+        }
+    }
+
+    checkUser();
+
 
 
     let isSignUpMode = false;
-const switchLink = document.getElementById('switch-mode');
-const authTitle = document.getElementById('auth-title');
+    const switchLink = document.getElementById('switch-mode');
+    const authTitle = document.getElementById('auth-title');
 
-// Toggle between Login and Signup
-switchLink.addEventListener('click', () => {
-    isSignUpMode = !isSignUpMode;
-    authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
-    authTitle.innerText = isSignUpMode ? "Join the Vibe" : "Welcome Back";
-    switchLink.innerText = isSignUpMode ? "Login instead" : "Sign Up";
-});
+    // Toggle between Login and Signup
+    switchLink.addEventListener('click', () => {
+        isSignUpMode = !isSignUpMode;
+        // Show/Hide the Display Name field
+        document.getElementById('display-name-input').style.display = isSignUpMode ? 'block' : 'none';
 
-authBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    const password = passInput.value.trim();
-    const errorDisplay = document.getElementById('error-msg'); // The <p> we added
-
-    // Reset UI
-    errorDisplay.innerText = ""; 
-    authBtn.disabled = true;
-    authBtn.innerText = "Processing...";
-
-    try {
-        if (isSignUpMode) {
-            const { data, error } = await db.auth.signUp({ email, password });
-            if (error) throw error; 
-            
-            // If signup works, show a success message instead of a scary alert
-            errorDisplay.style.color = "#00d4ff"; 
-            errorDisplay.innerText = "Account created! Check your email.";
-        } else {
-            const { data, error } = await db.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-
-            const userVibeName = data.user.email.split('@')[0];
-            localStorage.setItem('vibe-name', userVibeName);
-            overlay.style.display = 'none';
-            joinChat(userVibeName);
-        }
-    } catch (err) {
-        // Handle specific error codes for a better "vibe"
-        console.log("Supabase Error Object:", err); // Keep this for debugging
-        
-        if (err.status === 400) {
-            errorDisplay.innerText = "Wrong email or password. Try again!";
-        } else if (err.status === 422) {
-            errorDisplay.innerText = "Password too short (needs 6+ chars).";
-        } else {
-            errorDisplay.innerText = err.message;
-        }
-        
-        errorDisplay.style.color = "#ff4b4b"; // Error Red
-    } finally {
-        authBtn.disabled = false;
         authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
-    }
-});
-    
+        authTitle.innerText = isSignUpMode ? "Join the Vibe" : "Welcome Back";
+        switchLink.innerText = isSignUpMode ? "Login instead" : "Sign Up";
+    });
+
+    authBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        const password = passInput.value.trim();
+        const errorDisplay = document.getElementById('error-msg'); // The <p> we added
+
+        // Reset UI
+        errorDisplay.innerText = "";
+        authBtn.disabled = true;
+        authBtn.innerText = "Processing...";
+
+        try {
+            if (isSignUpMode) {
+
+                const displayName = document.getElementById('display-name-input').value.trim();
+                if (!displayName) throw new Error("Please choose a Display Name");
+
+                const { data, error } = await db.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            display_name: displayName // This saves it to the user's profile
+                        }
+                    }
+                });
+                if (error) throw error;
+
+                // If signup works, show a success message instead of a scary alert
+                errorDisplay.style.color = "#00d4ff";
+                errorDisplay.innerText = "Account created! Check your email.";
+            } else {
+                const {data, error} = await db.auth.signInWithPassword({email, password});
+                if (error) throw error;
+
+                const userVibeName = data.user.user_metadata.display_name || data.user.email.split('@')[0];
+                //localStorage.setItem('vibe-name', userVibeName);
+                overlay.style.display = 'none';
+                joinChat(userVibeName);
+            }
+        } catch (err) {
+            // Handle specific error codes for a better "vibe"
+            console.log("Supabase Error Object:", err); // Keep this for debugging
+
+            if (err.status === 400) {
+                errorDisplay.innerText = "Wrong email or password. Try again!";
+            } else if (err.status === 422) {
+                const msg = err.message.toLowerCase();
+
+                if (msg.includes("password")) {
+                    errorDisplay.innerText = "Password is too short (min 6 characters).";
+                } else if (msg.includes("already registered") || msg.includes("exists")) {
+                    errorDisplay.innerText = "This email is already taken! Try logging in.";
+                } else if (msg.includes("not allowed") || msg.includes("signups")) {
+                    errorDisplay.innerText = "Signups are disabled.";
+                } else {
+                    errorDisplay.innerText = "Invalid data. Please check your inputs.";
+                }
+            } else {
+                errorDisplay.innerText = err.message;
+            }
+
+            errorDisplay.style.color = "#ff4b4b"; // Error Red
+        } finally {
+            authBtn.disabled = false;
+            authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
+        }
+    });
 
 
     function switchRoom(newRoom) {
@@ -159,7 +205,7 @@ authBtn.addEventListener('click', async () => {
         // 1. Clear the UI immediately so it feels snappy
         messages.innerHTML = '';
         // 2. Tell the server to move us and send new history
-        socket.emit('switch-room', { oldRoom: currentRoom, newRoom: newRoom });
+        socket.emit('switch-room', {oldRoom: currentRoom, newRoom: newRoom});
         currentRoom = newRoom;
     }
 
@@ -168,7 +214,7 @@ authBtn.addEventListener('click', async () => {
         document.getElementById('app-container').style.visibility = 'visible';
         socket.emit('set-identity', name);
         // Manually trigger the room join for the default room
-        socket.emit('switch-room', { oldRoom: null, newRoom: 'general' });
+        socket.emit('switch-room', {oldRoom: null, newRoom: 'general'});
     }
 
     // Function to add a message to the UI
@@ -182,26 +228,20 @@ authBtn.addEventListener('click', async () => {
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
     }
-    
 
 
-
-    
-    // Check for returning user
+    /*// Check for returning user
     if (savedName) {
         joinChat(savedName);
-    }
+    }*/
 
-   
 
-  
-
-   // This remains the same as before, but now it fires every time you switch rooms
+    // This remains the same as before, but now it fires every time you switch rooms
     socket.on('load history', (history) => {
         messages.innerHTML = ''; // Double-check it's clear
         history.forEach(data => addMessageToUI(data));
     });
-    
+
     // 2. Listen for others typing
     socket.on('user typing', (data) => {
         typingIndicator.textContent = `User_${data.id} is vibing...`;
@@ -217,9 +257,7 @@ authBtn.addEventListener('click', async () => {
     });
 
 
-
-
-      // 1. Tell the server we are typing
+    // 1. Tell the server we are typing
     input.addEventListener('keypress', () => {
         socket.emit('typing');
 
@@ -239,8 +277,7 @@ authBtn.addEventListener('click', async () => {
         }
     });
 
-   
-  
+
 </script>
 </body>
 </html>
