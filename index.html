@@ -105,20 +105,31 @@ authBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
     const password = passInput.value.trim();
 
-    if (isSignUpMode) {
-        // --- SIGN UP LOGIC ---
-        const { data, error } = await db.auth.signUp({ email, password });
-        if (error) return alert(error.message);
-        alert("Check your email for a confirmation link!");
-    } else {
-        // --- LOGIN LOGIC ---
-        const { data, error } = await db.auth.signInWithPassword({ email, password });
-        if (error) return alert(error.message);
-        
-        const userVibeName = data.user.email.split('@')[0];
-        localStorage.setItem('vibe-name', userVibeName);
-        overlay.style.display = 'none';
-        joinChat(userVibeName);
+    // 1. Disable the button so they can't click twice
+    authBtn.disabled = true;
+    authBtn.innerText = "Processing...";
+
+    try {
+        if (isSignUpMode) {
+            const { data, error } = await db.auth.signUp({ email, password });
+            if (error) throw error; // Jump to catch block
+            
+            alert("Account created! Check your email or try logging in.");
+        } else {
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+
+            const userVibeName = data.user.email.split('@')[0];
+            localStorage.setItem('vibe-name', userVibeName);
+            overlay.style.display = 'none';
+            joinChat(userVibeName);
+        }
+    } catch (err) {
+        alert("Vibe Error: " + err.message);
+    } finally {
+        // 2. Re-enable the button regardless of success or failure
+        authBtn.disabled = false;
+        authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
     }
 });
     
