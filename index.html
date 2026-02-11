@@ -104,17 +104,21 @@ switchLink.addEventListener('click', () => {
 authBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
     const password = passInput.value.trim();
+    const errorDisplay = document.getElementById('error-msg'); // The <p> we added
 
-    // 1. Disable the button so they can't click twice
+    // Reset UI
+    errorDisplay.innerText = ""; 
     authBtn.disabled = true;
     authBtn.innerText = "Processing...";
 
     try {
         if (isSignUpMode) {
             const { data, error } = await db.auth.signUp({ email, password });
-            if (error) throw error; // Jump to catch block
+            if (error) throw error; 
             
-            alert("Account created! Check your email or try logging in.");
+            // If signup works, show a success message instead of a scary alert
+            errorDisplay.style.color = "#00d4ff"; 
+            errorDisplay.innerText = "Account created! Check your email.";
         } else {
             const { data, error } = await db.auth.signInWithPassword({ email, password });
             if (error) throw error;
@@ -125,9 +129,19 @@ authBtn.addEventListener('click', async () => {
             joinChat(userVibeName);
         }
     } catch (err) {
-        alert("Vibe Error: " + err.message);
+        // Handle specific error codes for a better "vibe"
+        console.log("Supabase Error Object:", err); // Keep this for debugging
+        
+        if (err.status === 400) {
+            errorDisplay.innerText = "Wrong email or password. Try again!";
+        } else if (err.status === 422) {
+            errorDisplay.innerText = "Password too short (needs 6+ chars).";
+        } else {
+            errorDisplay.innerText = err.message;
+        }
+        
+        errorDisplay.style.color = "#ff4b4b"; // Error Red
     } finally {
-        // 2. Re-enable the button regardless of success or failure
         authBtn.disabled = false;
         authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
     }
