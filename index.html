@@ -29,7 +29,7 @@
     <input id="pass-input" type="password" placeholder="Password" />
     
     <button id="auth-btn">Login</button>
-    <p id="toggle-auth">Need an account? <span style="color:#00d4ff; cursor:pointer">Sign Up</span></p>
+    <p id="toggle-text">Need an account? <span id="switch-mode" style="color:#00d4ff; cursor:pointer">Sign Up</span></p>
   </div>
 </div>
     
@@ -69,11 +69,10 @@
     const authBtn = document.getElementById('auth-btn'); // Renamed from join-btn
     let currentRoom = 'general';
 
-   
-    
       // Rename the variable to 'db' or 'supabaseClient'
     const supabaseUrl = 'https://knldcjijbpvxhcwenzle.supabase.co';
     const supabaseKey = 'sb_publishable_CU5pG98gM8IhgmVFeJRmAQ_uq4P1Xv9';
+
     
     // Use a different name than the library itself
     const db = supabase.createClient(supabaseUrl, supabaseKey); 
@@ -85,6 +84,41 @@
         password: passInput.value 
       });
     }
+
+
+    let isSignUpMode = false;
+const switchLink = document.getElementById('switch-mode');
+const authTitle = document.getElementById('auth-title');
+
+// Toggle between Login and Signup
+switchLink.addEventListener('click', () => {
+    isSignUpMode = !isSignUpMode;
+    authBtn.innerText = isSignUpMode ? "Create Account" : "Login";
+    authTitle.innerText = isSignUpMode ? "Join the Vibe" : "Welcome Back";
+    switchLink.innerText = isSignUpMode ? "Login instead" : "Sign Up";
+});
+
+authBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passInput.value.trim();
+
+    if (isSignUpMode) {
+        // --- SIGN UP LOGIC ---
+        const { data, error } = await db.auth.signUp({ email, password });
+        if (error) return alert(error.message);
+        alert("Check your email for a confirmation link!");
+    } else {
+        // --- LOGIN LOGIC ---
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) return alert(error.message);
+        
+        const userVibeName = data.user.email.split('@')[0];
+        localStorage.setItem('vibe-name', userVibeName);
+        overlay.style.display = 'none';
+        joinChat(userVibeName);
+    }
+});
+    
 
 
     function switchRoom(newRoom) {
