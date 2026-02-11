@@ -17,23 +17,24 @@ let roomHistory = {
 io.on('connection', (socket) => {
     const vibeColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
     // const userId = socket.id.substring(0, 5);
-    socket.userName = "Anonymous";
-    socket.join('general');
+    //socket.userName = "Anonymous";
+    //socket.join('general');
     socket.currentRoom = 'general';
 
-    //socket.emit('load history', msgHistory);
+    console.log('A user connected, waiting for identity...');
 
     socket.on('set-identity', (name) => {
         socket.userName = name;
         console.log(`${socket.userName} joined the vibe.`);
     });
 
-    socket.on('user-joined', ({ name, room }) => {
+    socket.on('user-joined', ({ name }) => {
         socket.userName = name;
-        socket.currentRoom = room;
-        socket.join(room);
+        socket.currentRoom = 'general';
+        socket.join('general');
 
-        sendUserList(room);
+        console.log(`${name} identified and joined general`);
+        sendUserList('general');
     });
 
     socket.on('switch-room', ({ oldRoom, newRoom }) => {
