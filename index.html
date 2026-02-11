@@ -15,15 +15,24 @@
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
 </head>
 <body>
-<div id="overlay" style="display:none;">
-    <div class="modal">
-        <h2>What's your vibe name?</h2>
-        <input id="name-input" placeholder="Enter nickname..." />
-        <button id="join-btn">Join Chat</button>
-    </div>
+
+
+<div id="overlay">
+  <div class="modal">
+    <h2 id="auth-title">Welcome Back</h2>
+    <input id="email-input" type="email" placeholder="Email" />
+    <input id="pass-input" type="password" placeholder="Password" />
+    
+    <button id="auth-btn">Login</button>
+    <p id="toggle-auth">Need an account? <span style="color:#00d4ff; cursor:pointer">Sign Up</span></p>
+  </div>
 </div>
+    
 
 <div id="app-container">
     <aside id="sidebar">
@@ -46,7 +55,6 @@
 
 
 
-<script src="/socket.io/socket.io.js"></script>
 
 <script>
     const socket = io();
@@ -61,7 +69,20 @@
     const joinBtn = document.getElementById('join-btn');
     let currentRoom = 'general';
 
-
+    const supabase = supabase.createClient('https://knldcjijbpvxhcwenzle.supabase.co', 'sb_publishable_CU5pG98gM8IhgmVFeJRmAQ_uq4P1Xv9');
+    
+    async function handleAuth() {
+      const email = emailInput.value;
+      const password = passInput.value;
+    
+      // Sign Up logic
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      
+      if (data.user) {
+        // Now you have a real user! 
+        joinChat(data.user.email.split('@')[0]); 
+      }
+    }
 
 
     function switchRoom(newRoom) {
