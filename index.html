@@ -191,33 +191,7 @@ authBtn.addEventListener('click', async () => {
     });
 
 
-     // 2. If they just typed it in the modal
-   authBtn.addEventListener('click', async () => {
-    const email = document.getElementById('email-input').value.trim();
-    const password = document.getElementById('pass-input').value.trim();
 
-    if (email && password) {
-        // 1. Try to log in via Supabase
-        const { data, error } = await db.auth.signInWithPassword({
-            email: email,
-            password: password,
-        });
-
-        if (error) {
-            alert("Vibe check failed: " + error.message);
-            return;
-        }
-
-        // 2. Success! Use the part of the email before the '@' as the name
-        const userName = data.user.email.split('@')[0];
-        
-        localStorage.setItem('vibe-name', userName); // Save for next time
-        overlay.style.display = 'none';
-        joinChat(userName);
-    } else {
-        alert("Please enter both email and password.");
-    }
-});
 
       // 1. Tell the server we are typing
     input.addEventListener('keypress', () => {
