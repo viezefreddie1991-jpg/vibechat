@@ -70,7 +70,12 @@
     }
 
 
-
+#error-msg {
+    min-height: 20px; /* Reserves space so the button doesn't jump */
+    font-size: 13px;
+    margin-bottom: 10px;
+    text-align: center;
+}
 
     #sidebar h3 { font-size: 0.9rem; color: #888; margin-bottom: 20px; text-transform: uppercase; }
 
