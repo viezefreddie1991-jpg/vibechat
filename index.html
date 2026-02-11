@@ -66,26 +66,16 @@
 
     function switchRoom(newRoom) {
         if (newRoom === currentRoom) return;
-
         // Visual active state for buttons
         document.querySelectorAll('.channel-btn').forEach(btn => {
             btn.classList.toggle('active', btn.innerText.includes(newRoom));
         });
-
         // 1. Clear the UI immediately so it feels snappy
         messages.innerHTML = '';
-
         // 2. Tell the server to move us and send new history
         socket.emit('switch-room', { oldRoom: currentRoom, newRoom: newRoom });
         currentRoom = newRoom;
     }
-
-    // This remains the same as before, but now it fires every time you switch
-    socket.on('load history', (history) => {
-        messages.innerHTML = ''; // Double-check it's clear
-        history.forEach(data => addMessageToUI(data));
-    });
-
 
     // Function to handle the join logic consistently
     function joinChat(name) {
@@ -94,26 +84,6 @@
         // Manually trigger the room join for the default room
         socket.emit('switch-room', { oldRoom: null, newRoom: 'general' });
     }
-
-    // Check for returning user
-    if (savedName) {
-        joinChat(savedName);
-    }
-
-    // 2. If they just typed it in the modal
-    joinBtn.addEventListener('click', () => {
-        const inputName = nameInput.value.trim();
-        if (inputName) {
-            localStorage.setItem('vibe-name', inputName);
-            overlay.style.display = 'none';
-            joinChat(inputName);
-        }
-    });
-
-   /* // Always emit the identity if it exists on load
-    if (localStorage.getItem('vibe-name')) {
-        socket.emit('set-identity', localStorage.getItem('vibe-name'));
-    }*/
 
     // Function to add a message to the UI
     function addMessageToUI(data) {
@@ -126,8 +96,52 @@
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
     }
+    
 
-    // 1. Tell the server we are typing
+
+
+    
+    // Check for returning user
+    if (savedName) {
+        joinChat(savedName);
+    }
+
+   
+
+  
+
+   // This remains the same as before, but now it fires every time you switch rooms
+    socket.on('load history', (history) => {
+        messages.innerHTML = ''; // Double-check it's clear
+        history.forEach(data => addMessageToUI(data));
+    });
+    
+    // 2. Listen for others typing
+    socket.on('user typing', (data) => {
+        typingIndicator.textContent = `User_${data.id} is vibing...`;
+    });
+
+    socket.on('user stop typing', () => {
+        typingIndicator.textContent = '';
+    });
+
+    socket.on('chat message', (data) => {
+        typingIndicator.textContent = '';
+        addMessageToUI(data);
+    });
+
+
+     // 2. If they just typed it in the modal
+    joinBtn.addEventListener('click', () => {
+        const inputName = nameInput.value.trim();
+        if (inputName) {
+            localStorage.setItem('vibe-name', inputName);
+            overlay.style.display = 'none';
+            joinChat(inputName);
+        }
+    });
+
+      // 1. Tell the server we are typing
     input.addEventListener('keypress', () => {
         socket.emit('typing');
 
@@ -138,21 +152,6 @@
         }, 2000);
     });
 
-    /*// Handle the history dump
-    socket.on('load history', (history) => {
-        // Clear current view (optional) and load all old messages
-        messages.innerHTML = '';
-        history.forEach(data => addMessageToUI(data));
-    });*/
-
-    // 2. Listen for others typing
-    socket.on('user typing', (data) => {
-        typingIndicator.textContent = `User_${data.id} is vibing...`;
-    });
-
-    socket.on('user stop typing', () => {
-        typingIndicator.textContent = '';
-    });
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -162,12 +161,8 @@
         }
     });
 
-    // Now handling the 'data' object { text, color, id }
-    // Handle new incoming messages
-    socket.on('chat message', (data) => {
-        typingIndicator.textContent = '';
-        addMessageToUI(data);
-    });
+   
+  
 </script>
 </body>
 </html>
