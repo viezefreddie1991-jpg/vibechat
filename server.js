@@ -28,6 +28,14 @@ io.on('connection', (socket) => {
         console.log(`${socket.userName} joined the vibe.`);
     });
 
+    socket.on('user-joined', ({ name, room }) => {
+        socket.userName = name;
+        socket.currentRoom = room;
+        socket.join(room);
+
+        sendUserList(room);
+    });
+
     socket.on('switch-room', ({ oldRoom, newRoom }) => {
         if (oldRoom) {
             socket.leave(oldRoom);
@@ -36,12 +44,34 @@ io.on('connection', (socket) => {
         socket.currentRoom = newRoom;
         console.log(`${socket.userName} moved to ${newRoom}`);
 
+        // Update both rooms
+        sendUserList(oldRoom);
+        sendUserList(newRoom);
+
         if (!roomHistory[newRoom]) {
             roomHistory[newRoom] = [];
         }
         // If you want history per room, you'd load it here
         socket.emit('load history', roomHistory[newRoom]);
     });
+
+    socket.on('disconnect', () => {
+        sendUserList(socket.currentRoom);
+    });
+
+    function sendUserList(room) {
+        if (!room) return;
+        // Get all sockets in the specific room
+        const clients = io.sockets.adapter.rooms.get(room);
+        const users = [];
+        if (clients) {
+            clients.forEach((socketId) => {
+                const clientSocket = io.sockets.sockets.get(socketId);
+                if (clientSocket.userName) users.push(clientSocket.userName);
+            });
+        }
+        io.to(room).emit('update-user-list', { room, users });
+    }
 
     socket.on('chat message', (msg) => {
         const data = {

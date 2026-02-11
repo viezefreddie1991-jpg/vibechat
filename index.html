@@ -44,6 +44,12 @@
         <button class="channel-btn active" onclick="switchRoom('general')"># general</button>
         <button class="channel-btn" onclick="switchRoom('gaming')"># gaming</button>
         <button class="channel-btn" onclick="switchRoom('code-talk')"># code-talk</button>
+
+        <div id="room-members">
+            <h3 id="current-room-title">In #general</h3>
+            <ul id="user-list">
+            </ul>
+        </div>
     </aside>
 
     <main id="chat-main">
@@ -197,15 +203,24 @@
 
 
     function switchRoom(newRoom) {
+        // 1. If we are already there, do nothing
         if (newRoom === currentRoom) return;
-        // Visual active state for buttons
+
+        // 2. Update the Title UI (using the new name)
+        document.getElementById('current-room-title').innerText = `In #${newRoom}`;
+
+        // 3. Visual active state for buttons
         document.querySelectorAll('.channel-btn').forEach(btn => {
             btn.classList.toggle('active', btn.innerText.includes(newRoom));
         });
-        // 1. Clear the UI immediately so it feels snappy
+
+        // 4. Clear the UI immediately
         messages.innerHTML = '';
-        // 2. Tell the server to move us and send new history
-        socket.emit('switch-room', {oldRoom: currentRoom, newRoom: newRoom});
+
+        // 5. Tell the server to move us (passing the current and the new room)
+        socket.emit('switch-room', { oldRoom: currentRoom, newRoom: newRoom });
+
+        // 6. Finally, update our local variable to the new room
         currentRoom = newRoom;
     }
 
@@ -235,6 +250,20 @@
         joinChat(savedName);
     }*/
 
+    // Handle the list update
+    socket.on('update-user-list', ({ room, users }) => {
+        // Only update if it's the room we are actually looking at
+        if (room === currentRoom) {
+            const userListUl = document.getElementById('user-list');
+            userListUl.innerHTML = '';
+            users.forEach(username => {
+                const li = document.createElement('li');
+                li.className = 'user-item';
+                li.innerHTML = `<span class="status-dot"></span> ${username}`;
+                userListUl.appendChild(li);
+            });
+        }
+    });
 
     // This remains the same as before, but now it fires every time you switch rooms
     socket.on('load history', (history) => {
