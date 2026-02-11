@@ -69,19 +69,21 @@
     const joinBtn = document.getElementById('join-btn');
     let currentRoom = 'general';
 
-    const supabase = supabase.createClient('https://knldcjijbpvxhcwenzle.supabase.co', 'sb_publishable_CU5pG98gM8IhgmVFeJRmAQ_uq4P1Xv9');
+   
     
+      // Rename the variable to 'db' or 'supabaseClient'
+    const supabaseUrl = 'https://knldcjijbpvxhcwenzle.supabase.co';
+    const supabaseKey = 'sb_publishable_CU5pG98gM8IhgmVFeJRmAQ_uq4P1Xv9';
+    
+    // Use a different name than the library itself
+    const db = supabase.createClient(supabaseUrl, supabaseKey); 
+    
+    // Now use 'db' whenever you need to login or signup
     async function handleAuth() {
-      const email = emailInput.value;
-      const password = passInput.value;
-    
-      // Sign Up logic
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      
-      if (data.user) {
-        // Now you have a real user! 
-        joinChat(data.user.email.split('@')[0]); 
-      }
+      const { data, error } = await db.auth.signInWithPassword({ 
+        email: emailInput.value, 
+        password: passInput.value 
+      });
     }
 
 
